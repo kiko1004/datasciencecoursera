@@ -1,0 +1,37 @@
+files<-list.files(getwd(), recursive=TRUE)
+files
+dActivityTest  <- read.table(file.path(getwd(), "test" , "Y_test.txt" ),header = FALSE)
+dActivityTrain <- read.table(file.path(getwd(), "train", "Y_train.txt"),header = FALSE)
+dSubjectTrain <- read.table(file.path(getwd(), "train", "subject_train.txt"),header = FALSE)
+dSubjectTest  <- read.table(file.path(getwd(), "test" , "subject_test.txt"),header = FALSE)
+dFeaturesTest  <- read.table(file.path(getwd(), "test" , "X_test.txt" ),header = FALSE)
+dFeaturesTrain <- read.table(file.path(getwd(), "train", "X_train.txt"),header = FALSE)
+dSubject <- rbind(dSubjectTrain, dSubjectTest)
+dActivity<- rbind(dActivityTrain, dActivityTest)
+dFeatures<- rbind(dFeaturesTrain, dFeaturesTest)
+names(dSubject)<-c("subject")
+names(dActivity)<- c("activity")
+dFeaturesNames <- read.table(file.path(getwd(), "features.txt"),head=FALSE)
+names(dFeatures)<- dFeaturesNames$V2
+dCombine <- cbind(dSubject, dActivity)
+Data <- cbind(dFeatures, dCombine)
+dFeaturesNames$V2[grep("mean\\(\\)|std\\(\\)", dFeaturesNames$V2)]
+FeaturesNames<-dFeaturesNames$V2[grep("mean\\(\\)|std\\(\\)", dFeaturesNames$V2)]
+selectedNames<-c(as.character(FeaturesNames), "subject", "activity" )
+Data<-subset(Data,select=selectedNames)
+str(Data)
+Labels <- read.table(file.path(getwd(), "activity_labels.txt"),header = FALSE)
+Data$activity <- factor(Data$activity, labels = Labels$V2)
+head(Data$activity,30)
+names(Data)<-gsub("^t", "time", names(Data))
+names(Data)<-gsub("^f", "frequency", names(Data))
+names(Data)<-gsub("Acc", "Accelerometer", names(Data))
+names(Data)<-gsub("Gyro", "Gyroscope", names(Data))
+names(Data)<-gsub("Mag", "Magnitude", names(Data))
+names(Data)<-gsub("BodyBody", "Body", names(Data))
+library(plyr)
+ClearData<-aggregate(. ~subject + activity, Data, mean)
+ClearData<-ClearData[order(ClearData$subject,ClearData$activity),]
+write.table(ClearData, file = "ClearData.txt",row.name=FALSE)
+write.csv(ClearData, "ClearData.csv")
+
